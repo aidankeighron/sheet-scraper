@@ -4,7 +4,7 @@ import keys
 
 def retrieve_messages(channelID):
     headers = {
-        "authorization": keys.DISCORD_AUTH
+        "authorization": "Bot " + str(keys.DISCORD_AUTH)
     }
     r = requests.get(f"https://discord.com/api/v9/channels/{channelID}/messages?limit=100", headers=headers)
     jsonn = json.loads(r.text)
