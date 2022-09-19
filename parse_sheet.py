@@ -206,12 +206,12 @@ for i, id in enumerate(spreadsheet_id):
         failed_sheets.append(id)
     sleep(10) # Quota
 sleep(10)
-existing = get_sheet(RESULT)
-if existing != -1:
-    del existing[0]
-    for shirt in existing:
-        if shirt not in shirts:
-            shirts.append(shirt)
+# existing = get_sheet(RESULT)
+# if existing != -1:
+#     del existing[0]
+#     for shirt in existing:
+#         if shirt not in shirts:
+#             shirts.append(shirt)
 sheet = sort_sheet(shirts)
 write_result(sheet, RESULT)
 print(failed_sheets)
