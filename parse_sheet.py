@@ -1,6 +1,6 @@
 from googleapiclient import discovery
 from googleapiclient import _auth
-from get_messages import get_ids
+from get_messages import get_forum_ids#, get_ids
 from time import sleep
 import requests
 import keys
@@ -183,7 +183,7 @@ def write_result(sheet, id):
 
 # Shirts
 shirts = []
-spreadsheet_id, users = get_ids()
+spreadsheet_id, users = get_forum_ids()
 user_dict = {}
 for i, id in enumerate(spreadsheet_id):
     user_dict[str(id)] = users[i]
