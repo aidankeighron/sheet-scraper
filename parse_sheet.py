@@ -18,7 +18,7 @@ RESULT = "1xDtfRs81EcdFHOiG-Nua_mBz2xAD4tFVVtNt6SjwPoM"
 team_names = {}
 failed_sheets = []
 
-def get_team_number(number):
+def get_team_name(number):
     try:
         name = team_names[str(number)]
         return name
@@ -30,11 +30,11 @@ def get_team_number(number):
     team_names[str(number)] = request.json()['nickname']
     return request.json()['nickname']
 
-def check_category(val, currentCategories):
+def check_category(val):
     if val == "":
         return "none"
     val = val.lower()
-    if ("name" in val and "username" not in val):
+    if "name" in val and "username" not in val:
         return "Name"
     if "number" in val or ("#" in val and "team" in val):
         return "Number"
@@ -52,7 +52,7 @@ def check_category(val, currentCategories):
         return "Tradability"
     if "notes" in val or "other" in val or "comments" in val:
         return "Notes"
-    if "team" in val: # Some sheets do this KEEP AT BOTTOM last case scenario
+    if "team" in val:
         return "Number"
     return "none"
 
@@ -70,13 +70,13 @@ def get_catagories(sheet):
         category_locations = {category:-1 for category in CATEGORIES}
         for i in range(start + 1, len(sheet)):
             for j in range(len(sheet[i])):
-                if check_category(sheet[i][j], category_locations) != "none" and category_locations[check_category(sheet[i][j], category_locations)] == -1:
-                    category_locations[check_category(sheet[i][j], category_locations)] = j
+                if check_category(sheet[i][j]) != "none" and category_locations[check_category(sheet[i][j])] == -1:
+                    category_locations[check_category(sheet[i][j])] = j
                     start = i
             if start == i: # Category's need to be in a row
                 break
-        categoryFound = sum(1 for _, category in category_locations.items() if category != -1)
-        if categoryFound >= MIN_CATEGORIES:
+        categoriesFound = sum(1 for _, category in category_locations.items() if category != -1)
+        if categoriesFound >= MIN_CATEGORIES:
             break
     else:
         sheet = list(zip(*sheet[::-1])) # Rotate 90 deg
@@ -85,53 +85,45 @@ def get_catagories(sheet):
             category_locations = {category:-1 for category in CATEGORIES}
             for i in range(start + 1, len(sheet)):
                 for j in range(len(sheet[i])):
-                    if check_category(sheet[i][j], category_locations) != "none" and category_locations[check_category(sheet[i][j], category_locations)] == -1:
-                        category_locations[check_category(sheet[i][j], category_locations)] = j
+                    if check_category(sheet[i][j]) != "none" and category_locations[check_category(sheet[i][j])] == -1:
+                        category_locations[check_category(sheet[i][j])] = j
                         start = i
                 if start == i: # Category's need to be in a row
                     break
-            categoryFound = sum(1 for _, category in category_locations.items() if category != -1)
-            if categoryFound >= MIN_CATEGORIES:
+            categoriesFound = sum(1 for _, category in category_locations.items() if category != -1)
+            if categoriesFound >= MIN_CATEGORIES:
                 break
         else:
             raise Exception("Bad Sheet")
     end = -1
-    x = -1
-    y = -1
     for row in range(len(sheet)):
         for col in range(len(sheet[row])):
             val = str(sheet[row][col]).lower()
             if "wish" in val or "wants" in val or "looking" in val:
-                y = row
-                x = col
+                end = row if all([col <= index for _, index in category_locations.items()]) else -1
                 break
-        if y != -1:
+        if end != -1:
             break
-    if x != -1:
-        for _, index in category_locations.items():
-            if index >= x:
-                end = y
     return category_locations, start, end
 
 def parse_sheet(sheet, start, end, user, id, category_locations):
     shirts = []
     empty = 0
-    for i in range(start+1, len(sheet) if end == -1 else end):
+    for row in range(start+1, len(sheet) if end == -1 else end):
         shirt = {category:"" for category in CATEGORIES}
         shirt["User"] = user
         shirt["ID"] = id
         for category, col in category_locations.items():
-            if col == -1 or col >= len(sheet[i]): # Prevent access of data outside range (happens when last index is blank)
+            if col == -1 or col >= len(sheet[row]): # Prevent access of data outside range (happens when last index is blank)
                 continue
-            shirt[category] = sheet[i][col]
-        shirt = list(shirt.values())
-        if shirt[0] == "" and shirt[1] != "":
+            shirt[category] = sheet[row][col]
+        if shirt["Name"] == "" and shirt["Number"] != "":
             try:
-                int(shirt[1])
-                shirt[0] = get_team_number(int(shirt[1]))
+                int(shirt["Number"])
+                shirt["Name"] = get_team_name(int(shirt["Number"]))
             except:
                 ...
-        numNotEmpty = sum(1 for col in shirt if col != '')
+        numNotEmpty = sum(1 for _, col in shirt.items() if col != '')
         if numNotEmpty >= MIN_SHIRT_DATA:
             shirts.append(shirt)
             empty = 0
@@ -197,9 +189,8 @@ for i, id in enumerate(spreadsheet_id):
         if sheet == -1:
             continue
         cat, start, end = get_catagories(sheet)
-        sheet = parse_sheet(sheet, start, end, user_dict[str(id)], id, cat) # "1suhkm54lF5jBzUnV67mc_mjXAvyBNQDj8PESTOPaLko"
-        for shirt in sheet:
-            shirts.append(shirt)
+        sheet = parse_sheet(sheet, start, end, user_dict[str(id)], id, cat)
+        shirts += list(sheet.values()) # todo fix
     except Exception as e:
         print(str(e))
         print("FAILED")

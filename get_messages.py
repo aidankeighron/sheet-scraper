@@ -7,13 +7,13 @@ def retrieve_messages(channelID):
         "authorization": "Bot " + str(keys.DISCORD_AUTH)
     }
     r = requests.get(f"https://discord.com/api/v9/channels/{channelID}/messages?limit=100", headers=headers)
-    jsonn = json.loads(r.text)
-    return jsonn
+    data = json.loads(r.text)
+    return data
         
-def get_sheet_id(jsonn):
+def get_sheet_id(data):
     ids = []
     user = []
-    for value in jsonn:
+    for value in data:
         try:
             id = value["content"].split("/d/")
             id[1] = id[1].split("/edit")
