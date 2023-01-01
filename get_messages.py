@@ -35,6 +35,11 @@ client = discord.Client(intents=discord.Intents.default())
 messages = []
 users = []
 
+import platform
+import asyncio
+if platform.system() == 'Windows':
+	asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 @client.event
 async def on_ready():
     firstTime = True
@@ -55,7 +60,6 @@ async def on_ready():
                             break
                 break
     await client.close()
-                
 
 
 def get_forum_ids():

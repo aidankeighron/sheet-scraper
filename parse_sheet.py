@@ -14,7 +14,7 @@ MIN_CATEGORIES = 3
 MIN_SHIRT_DATA = 5
 MAX_EMPTY = 10
 CATEGORIES = ["Name", "Number", "Size", "Type", "Year", "Description", "Availability", "Tradability", "Notes"]
-RESULT = "1xDtfRs81EcdFHOiG-Nua_mBz2xAD4tFVVtNt6SjwPoM"
+RESULT = "1uPccZiJkJ30pq_gxEH05ROzzS9s_5XrxFFS3m3yMaBU"#"1xDtfRs81EcdFHOiG-Nua_mBz2xAD4tFVVtNt6SjwPoM"
 team_names = {}
 failed_sheets = []
 
@@ -66,14 +66,14 @@ def get_sheet(id):
 
 def get_catagories(sheet):
     start = -1
-    for tries in range(10):
+    for _ in range(10):
         category_locations = {category:-1 for category in CATEGORIES}
-        for i in range(start + 1, len(sheet)):
-            for j in range(len(sheet[i])):
-                if check_category(sheet[i][j]) != "none" and category_locations[check_category(sheet[i][j])] == -1:
-                    category_locations[check_category(sheet[i][j])] = j
-                    start = i
-            if start == i: # Category's need to be in a row
+        for row in range(start + 1, len(sheet)):
+            for col in range(len(sheet[row])):
+                if check_category(sheet[row][col]) != "none" and category_locations[check_category(sheet[row][col])] == -1:
+                    category_locations[check_category(sheet[row][col])] = col
+                    start = row
+            if start == row: # Category's need to be in a row
                 break
         categoriesFound = sum(1 for _, category in category_locations.items() if category != -1)
         if categoriesFound >= MIN_CATEGORIES:
@@ -81,14 +81,14 @@ def get_catagories(sheet):
     else:
         sheet = list(zip(*sheet[::-1])) # Rotate 90 deg
         start = -1
-        for tries in range(10):
+        for _ in range(10):
             category_locations = {category:-1 for category in CATEGORIES}
-            for i in range(start + 1, len(sheet)):
-                for j in range(len(sheet[i])):
-                    if check_category(sheet[i][j]) != "none" and category_locations[check_category(sheet[i][j])] == -1:
-                        category_locations[check_category(sheet[i][j])] = j
-                        start = i
-                if start == i: # Category's need to be in a row
+            for row in range(start + 1, len(sheet)):
+                for col in range(len(sheet[row])):
+                    if check_category(sheet[row][col]) != "none" and category_locations[check_category(sheet[row][col])] == -1:
+                        category_locations[check_category(sheet[row][col])] = col
+                        start = row
+                if start == row: # Category's need to be in a row
                     break
             categoriesFound = sum(1 for _, category in category_locations.items() if category != -1)
             if categoriesFound >= MIN_CATEGORIES:
@@ -114,7 +114,7 @@ def parse_sheet(sheet, start, end, user, id, category_locations):
         shirt["User"] = user
         shirt["ID"] = id
         for category, col in category_locations.items():
-            if col == -1 or col >= len(sheet[row]): # Prevent access of data outside range (happens when last index is blank)
+            if col == -1 or col >= len(sheet[row]):
                 continue
             shirt[category] = sheet[row][col]
         if shirt["Name"] == "" and shirt["Number"] != "":
@@ -135,20 +135,20 @@ def parse_sheet(sheet, start, end, user, id, category_locations):
 def sort_sheet(shirts):
     nonInt = {}
     currentInt = 999999999
-    for row in range(len(shirts)):
+    for row in shirts:
         try:
-            shirts[row][1] = int(shirts[row][1])
+            row[1] = int(row[1])
         except:
-            nonInt[str(currentInt)] = shirts[row][1]  
-            shirts[row][1] = currentInt
+            nonInt[str(currentInt)] = row[1]  
+            row[1] = currentInt
             currentInt += 1          
     
     shirts.sort(key=lambda x: int(x[1]))
     
-    for row in range(len(shirts)):
+    for row in shirts:
         try:
-            if shirts[row][1] >= 999999999:
-                shirts[row][1] = nonInt[str(shirts[row][1])]
+            if row[1] >= 999999999:
+                row[1] = nonInt[str(row[1])]
         except Exception as e:
             print(str(e))
     return shirts
@@ -177,8 +177,8 @@ def write_result(sheet, id):
 shirts = []
 spreadsheet_id, users = get_forum_ids()
 user_dict = {}
-for i, id in enumerate(spreadsheet_id):
-    user_dict[str(id)] = users[i]
+for user, id in zip(users, spreadsheet_id):
+    user_dict[str(id)] = user
 spreadsheet_id = sorted(set(spreadsheet_id))
 for i, id in enumerate(spreadsheet_id):
     print(id + ": " + str(i+1) + "/" + str(len(spreadsheet_id)))
@@ -188,21 +188,16 @@ for i, id in enumerate(spreadsheet_id):
         sheet = get_sheet(id)
         if sheet == -1:
             continue
-        cat, start, end = get_catagories(sheet)
-        sheet = parse_sheet(sheet, start, end, user_dict[str(id)], id, cat)
-        shirts += list(sheet.values()) # todo fix
+        category, start, end = get_catagories(sheet)
+        sheet = parse_sheet(sheet, start, end, user_dict[str(id)], id, category)
+        shirts += [list(shirt.values()) for shirt in sheet]
     except Exception as e:
         print(str(e))
         print("FAILED")
         failed_sheets.append(id)
     sleep(10) # Quota
 sleep(10)
-# existing = get_sheet(RESULT)
-# if existing != -1:
-#     del existing[0]
-#     for shirt in existing:
-#         if shirt not in shirts:
-#             shirts.append(shirt)
+
 sheet = sort_sheet(shirts)
 write_result(sheet, RESULT)
 print(failed_sheets)
@@ -217,8 +212,7 @@ for shirt in sheet:
     else:
         numberOfShirts[str(shirt[1])] = 1
 sheet = []
-for team, num in numberOfShirts.items():
-    sheet.append([team, num])
+sheet = [[team, num] for team, num in numberOfShirts.items()]
     
 values = {"majorDimension": "ROWS", "range": "Count", "values": sheet}
 result = service.spreadsheets().values().update(spreadsheetId=RESULT, range="Count", valueInputOption="RAW", body=values).execute()
