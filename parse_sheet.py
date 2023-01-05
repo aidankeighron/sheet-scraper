@@ -112,7 +112,7 @@ def parse_sheet(sheet, start, end, user, id, category_locations):
     for row in range(start+1, len(sheet) if end == -1 else end):
         shirt = {category:"" for category in CATEGORIES}
         shirt["User"] = user
-        shirt["ID"] = id
+        shirt["ID"] = "https://docs.google.com/spreadsheets/d/"+str(id)+"/edit#gid=0"
         for category, col in category_locations.items():
             if col == -1 or col >= len(sheet[row]):
                 continue
