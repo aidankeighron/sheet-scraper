@@ -1,5 +1,6 @@
 # Sheet-Scraper
-Scrapes Spreadsheets from FRC Trading Discord
+Scrapes Spreadsheets from FRC Trading Discord 
+[https://docs.google.com/spreadsheets/d/1xDtfRs81EcdFHOiG-Nua_mBz2xAD4tFVVtNt6SjwPoM/edit#gid=341185536](Mega Spreadsheet)
 # Set up
 You need to replace all references to keys.
 - keys.BLUE_ALLIANCE = https://www.thebluealliance.com/apidocs api key
